@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.vscode/
+.idea/
+
+# Estado local do Playbooker: a trilha de auditoria e o mundo simulado de quem usa (os exemplos ficam em samples/)
+*.db
+world.json
+anchor*.json
+dados/

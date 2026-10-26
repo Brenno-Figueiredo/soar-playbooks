@@ -1,0 +1,27 @@
+id: ip-reputacao-ruim
+name: Bloquear IP de reputação muito ruim
+description: >-
+    Quando a inteligência de ameaças marca um IP como malicioso, confirma a nota no inventário e bloqueia por 72 horas se ela for de 80 ou mais. Abre um chamado.
+trigger:
+    source: [threatlens]
+    min_severity: high
+inputs:
+    ip: ip
+steps:
+    - id: confirmar
+      action: enrich_ip
+      params: {ip: '{{ alert.ip }}'}
+    - id: bloquear
+      action: block_ip
+      params: {ip: '{{ alert.ip }}', hours: 72, reason: 'Reputação ruim (threatlens)'}
+      when: steps.confirmar.score >= 80
+    - id: chamado
+      action: open_ticket
+      params: {title: 'IP de reputação ruim: {{ alert.ip }}', severity: medium, body: '{{ alert.message }}'}
+x_tests:
+    - name: nota alta é bloqueada
+      alert: {source: threatlens, severity: high, message: 'Reputação ruim: 198.51.100.23', ip: 198.51.100.23}
+      expect: {confirmar: done, bloquear: planned, chamado: planned}
+    - name: nota média não é bloqueada
+      alert: {source: threatlens, severity: high, message: 'Reputação ruim: 192.0.2.99', ip: 192.0.2.99}
+      expect: {bloquear: skipped, chamado: planned}

@@ -1,0 +1,48 @@
+id: conta-comprometida
+name: Conta possivelmente comprometida
+description: >-
+    Um login bem-sucedido logo depois de várias falhas indica que a senha foi adivinhada. Consulta a conta, avisa o gestor se ela for privilegiada,
+    desativa a conta (ação de alto risco: exige duas pessoas), encerra as sessões e abre um chamado crítico.
+trigger:
+    source: [loginguard]
+    min_severity: critical
+    message_contains: [após falhas]
+inputs:
+    user: user
+steps:
+    - id: usuario
+      action: lookup_user
+      params: {user: '{{ alert.user }}'}
+    - id: avisar_gestor
+      action: notify
+      params: {channel: gestor, message: 'Conta privilegiada {{ alert.user }} possivelmente comprometida.'}
+      when: steps.usuario.privileged
+    - id: desativar
+      action: disable_account
+      params: {user: '{{ alert.user }}'}
+      when: steps.usuario.known and steps.usuario.active
+      on_failure: continue
+    - id: sessoes
+      action: revoke_sessions
+      params: {user: '{{ alert.user }}'}
+      when: steps.usuario.known
+      on_failure: continue
+    - id: chamado
+      action: open_ticket
+      params: {title: 'Conta {{ alert.user }} possivelmente comprometida', severity: critical, body: '{{ alert.message }}'}
+x_tests:
+    - name: conta privilegiada: avisa o gestor e desativa
+      alert: {source: loginguard, severity: critical, message: "Login em 'deploy' após falhas", user: deploy}
+      expect: {usuario: done, avisar_gestor: planned, desativar: planned, sessoes: planned, chamado: planned}
+    - name: conta comum não avisa o gestor
+      alert: {source: loginguard, severity: critical, message: "Login em 'ana' após falhas", user: ana}
+      expect: {avisar_gestor: skipped, desativar: planned, sessoes: planned, chamado: planned}
+    - name: conta protegida é recusada, e o chamado segue
+      alert: {source: loginguard, severity: critical, message: "Login em 'break-glass' após falhas", user: break-glass}
+      expect: {desativar: refused, sessoes: refused, chamado: planned}
+    - name: usuário desconhecido: nada é feito, só o chamado
+      alert: {source: loginguard, severity: critical, message: "Login em 'fantasma' após falhas", user: fantasma}
+      expect: {usuario: done, desativar: skipped, sessoes: skipped, chamado: planned}
+    - name: sem o usuário, a execução é bloqueada
+      alert: {source: loginguard, severity: critical, message: 'Login após falhas'}
+      expect_run: blocked

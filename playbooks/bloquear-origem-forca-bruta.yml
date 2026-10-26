@@ -1,0 +1,43 @@
+id: bloquear-origem-forca-bruta
+name: Bloquear a origem de uma força bruta
+description: >-
+    Quando uma ferramenta de monitoramento acusa força bruta contra o SSH ou o login, confere a reputação do IP e, se ela for ruim (ou o alerta for crítico),
+    bloqueia o endereço por 24 horas, com aprovação. Sempre abre um chamado e avisa o SOC.
+trigger:
+    source: [logwatch, loginguard, sshoney]
+    min_severity: high
+    message_contains: [força bruta, brute force]
+inputs:
+    ip: ip
+steps:
+    - id: reputacao
+      action: enrich_ip
+      params: {ip: '{{ alert.ip }}'}
+    - id: bloquear
+      action: block_ip
+      params: {ip: '{{ alert.ip }}', hours: 24, reason: 'Força bruta ({{ alert.source }})'}
+      when: "steps.reputacao.score >= 70 or alert.severity == 'critical'"
+      on_failure: continue
+    - id: chamado
+      action: open_ticket
+      params: {title: 'Força bruta vinda de {{ alert.ip }}', severity: '{{ alert.severity }}', body: '{{ alert.message }}'}
+    - id: avisar
+      action: notify
+      params: {channel: soc, message: 'Força bruta de {{ alert.ip }}: reputação {{ steps.reputacao.reputation }}'}
+x_tests:
+    - name: bloqueia a origem de reputação ruim
+      alert: {source: logwatch, severity: high, message: 'Força bruta SSH de 203.0.113.50', ip: 203.0.113.50}
+      expect: {reputacao: done, bloquear: planned, chamado: planned, avisar: planned}
+    - name: reputação média com alerta só alto não bloqueia
+      alert: {source: logwatch, severity: high, message: 'Força bruta SSH de 192.0.2.99', ip: 192.0.2.99}
+      expect: {reputacao: done, bloquear: skipped, chamado: planned, avisar: planned}
+    - name: alerta fraco não aciona o playbook
+      alert: {source: logwatch, severity: low, message: 'Força bruta SSH de 203.0.113.50', ip: 203.0.113.50}
+      expect_matches: false
+    - name: recusa bloquear um IP interno mesmo em alerta crítico
+      alert: {source: logwatch, severity: critical, message: 'Força bruta SSH de 10.0.4.12', ip: 10.0.4.12}
+      expect: {bloquear: refused, chamado: planned, avisar: planned}
+      expect_run: completed
+    - name: sem o IP, a execução é bloqueada
+      alert: {source: logwatch, severity: high, message: 'Força bruta SSH sem origem'}
+      expect_run: blocked

@@ -1,0 +1,43 @@
+id: host-com-ransomware
+name: Host com sinais de ransomware
+description: >-
+    A remoção das cópias de sombra do Windows é um sinal clássico de ransomware. Consulta o host e o isola da rede (alto risco: duas pessoas aprovam),
+    abre um chamado crítico e avisa o SOC. Hosts protegidos e ativos críticos são recusados pela política: nesses casos a decisão é humana.
+trigger:
+    source: [ruleforge]
+    min_severity: critical
+    message_contains: [cópias de sombra, T1490]
+inputs:
+    host: host
+steps:
+    - id: ativo
+      action: lookup_host
+      params: {host: '{{ alert.host }}'}
+    - id: isolar
+      action: isolate_host
+      params: {host: '{{ alert.host }}'}
+      when: steps.ativo.known
+      on_failure: continue
+    - id: chamado
+      action: open_ticket
+      params: {title: 'Possível ransomware em {{ alert.host }}', severity: critical, body: '{{ alert.message }}'}
+    - id: avisar
+      action: notify
+      params: {channel: soc, message: 'Possível ransomware em {{ alert.host }}. Veja o chamado.'}
+x_tests:
+    - name: isola uma estação comum
+      alert: {source: ruleforge, severity: critical, message: 'Detecção: Remoção das cópias de sombra (T1490)', host: PC-FIN-01}
+      expect: {ativo: done, isolar: planned, chamado: planned, avisar: planned}
+    - name: um servidor de criticidade alta ainda pode ser isolado, com aprovação
+      alert: {source: ruleforge, severity: critical, message: 'Detecção: Remoção das cópias de sombra (T1490)', host: SRV-APP-01}
+      expect: {isolar: planned}
+    - name: recusa isolar o controlador de domínio
+      alert: {source: ruleforge, severity: critical, message: 'Detecção: Remoção das cópias de sombra (T1490)', host: DC-01}
+      expect: {isolar: refused, chamado: planned, avisar: planned}
+    - name: recusa isolar um ativo crítico
+      alert: {source: ruleforge, severity: critical, message: 'Detecção: Remoção das cópias de sombra (T1490)', host: DB-01}
+      world: {hosts: {DB-01: {criticality: critical, isolated: false}}}
+      expect: {isolar: refused, chamado: planned}
+    - name: host que não existe no inventário não é tocado
+      alert: {source: ruleforge, severity: critical, message: 'Detecção: Remoção das cópias de sombra (T1490)', host: PC-FANTASMA}
+      expect: {ativo: done, isolar: skipped, chamado: planned}

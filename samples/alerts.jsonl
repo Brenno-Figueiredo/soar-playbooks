@@ -1,0 +1,9 @@
+{"ts": 1792000000, "source": "logwatch", "severity": "high", "message": "Força bruta SSH de 203.0.113.50", "ip": "203.0.113.50"}
+{"ts": 1792000060, "source": "loginguard", "severity": "critical", "message": "Login em 'deploy' após falhas", "user": "deploy", "ip": "203.0.113.50"}
+{"ts": 1792000120, "source": "ruleforge", "severity": "critical", "message": "Detecção: Remoção das cópias de sombra (backups do Windows) (T1490)", "host": "PC-FIN-01", "ip": "10.0.4.31"}
+{"ts": 1792000180, "source": "ruleforge", "severity": "critical", "message": "Detecção: Remoção das cópias de sombra (backups do Windows) (T1490)", "host": "DC-01", "ip": "10.0.0.5"}
+{"ts": 1792000240, "source": "logwatch", "severity": "critical", "message": "Força bruta SSH de 10.0.4.12", "ip": "10.0.4.12"}
+{"ts": 1792000300, "source": "logwatch", "severity": "high", "message": "Força bruta SSH de 203.0.113.50", "ip": "203.0.113.50"}
+{"ts": 1792000360, "source": "threatlens", "severity": "high", "message": "Reputação ruim: 198.51.100.23 com confiança de abuso de 85%", "ip": "198.51.100.23"}
+{"ts": 1792000420, "source": "phishguard", "severity": "medium", "message": "E-mail de phishing reportado: boleto falso em nome do banco"}
+{"ts": 1792000480, "source": "loginguard", "severity": "critical", "message": "Login após falhas em conta desconhecida"}

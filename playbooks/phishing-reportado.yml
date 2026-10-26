@@ -1,0 +1,22 @@
+id: phishing-reportado
+name: Phishing reportado
+description: >-
+    Um e-mail de phishing reportado só gera um chamado e um aviso ao SOC. Nenhum dos dois passos altera nada do ambiente, então o playbook inteiro roda
+    sozinho, sem aprovação: é o exemplo de automação de baixo risco.
+trigger:
+    source: [phishguard]
+    min_severity: medium
+steps:
+    - id: chamado
+      action: open_ticket
+      params: {title: 'Phishing reportado', severity: '{{ alert.severity }}', body: '{{ alert.message }}'}
+    - id: avisar
+      action: notify
+      params: {channel: soc, message: 'Novo phishing reportado. Veja o chamado.'}
+x_tests:
+    - name: abre o chamado e avisa
+      alert: {source: phishguard, severity: medium, message: 'E-mail de phishing reportado: boleto falso'}
+      expect: {chamado: planned, avisar: planned}
+    - name: severidade baixa não aciona
+      alert: {source: phishguard, severity: low, message: 'E-mail suspeito'}
+      expect_matches: false

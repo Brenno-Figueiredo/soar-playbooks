@@ -1,0 +1,44 @@
+{
+  "automation_enabled": true,
+  "approval_required_for": [
+    "medium",
+    "high"
+  ],
+  "two_person_for": [
+    "high"
+  ],
+  "protected_nets": [
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "127.0.0.0/8",
+    "169.254.0.0/16",
+    "0.0.0.0/8",
+    "224.0.0.0/4",
+    "240.0.0.0/4",
+    "::1/128",
+    "fc00::/7",
+    "fe80::/10",
+    "ff00::/8",
+    "::/128"
+  ],
+  "protected_accounts": [
+    "break-glass",
+    "svc-backup"
+  ],
+  "protected_hosts": [
+    "DC-01"
+  ],
+  "max_block_prefix_v4": 24,
+  "max_block_prefix_v6": 64,
+  "block_hours_max": 720,
+  "isolate_critical": false,
+  "rate_limit_per_hour": {
+    "block_ip": 20,
+    "disable_account": 5,
+    "isolate_host": 3,
+    "revoke_sessions": 10
+  },
+  "max_steps_per_run": 20,
+  "dedupe_hours": 6
+}
